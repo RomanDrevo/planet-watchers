@@ -1,97 +1,115 @@
 import React, {useEffect, useState} from 'react';
-import logo from './logo.svg';
 import './App.css';
+import {useDispatch, useSelector} from "react-redux";
+import {useGetProductsQuery} from "./store/productsApi";
+import {Button} from "antd";
+import {setIsLoading} from "./store/uiStateSlice";
+import SkeletonImage from "antd/es/skeleton/Image";
 
 
-
-
-interface Product {
-  id: number;
-  uuid: string;
-
+interface RootState {
+    uiState: {
+        isLoading: boolean;
+        brightness: number
+    };
 }
 
-// const uriQuery = 'https://scihub.copernicus.eu/dhus/api/stub/products?filter=(%20footprint:%22Intersects(POLYGON((34.76662356669317%2032.049496083697804,34.804270305187%2032.049496083697804,34.804270305187%2032.09911883991042,34.76662356669317%2032.09911883991042,34.76662356669317%2032.049496083697804)))%22%20)%20AND%20(%20%20(platformname:Sentinel-2%20AND%20cloudcoverpercentage:[0%20TO%2030]))&offset=0&limit=25&sortedby=ingestiondate&order=desc&format=json'
+const baseUrl = 'https://scihub.copernicus.eu/dhus';
+const platform = 'Sentinel-2'
+const cloudcoverage = '[0 TO 29]'
+const coordinates = 'Intersects(POLYGON((34.76662356669317%2032.049496083697804,34.804270305187%2032.049496083697804,34.804270305187%2032.09911883991042,34.76662356669317%2032.09911883991042,34.76662356669317%2032.049496083697804)))'
 
 
+const Image = React.memo(({productId}: { productId: string }) => {
+    const dispatch = useDispatch();
+    const isLoading = useSelector((state: RootState) => state.uiState.isLoading);
 
-const uriQuery = 'https://scihub.copernicus.eu/dhus/search?q=footprint:"Intersects(POLYGON((34.76662356669317%2032.049496083697804,34.804270305187%2032.049496083697804,34.804270305187%2032.09911883991042,34.76662356669317%2032.09911883991042,34.76662356669317%2032.049496083697804)))" AND platformname:"Sentinel-2" AND cloudcoverpercentage:[0 TO 29]&format=json'
+    const [brightness, setBrightness] = useState(1);
 
-const username = "romulus_hund";
-const password = "443512Prol@";
+    const handleIncreaseBrightness = () => {
+        setBrightness(prevBrightness => prevBrightness + 0.1);  // increment brightness by 10%
+    };
 
+    const handleDecreaseBrightness = () => {
+        setBrightness(prevBrightness => prevBrightness - 0.1);  // increment brightness by 10%
+    };
+
+    return (
+        <div>
+            <>
+                <h5>Brightness:</h5>
+                <Button onClick={handleIncreaseBrightness} style={{marginRight: 10}}>+</Button>
+                <Button onClick={handleDecreaseBrightness} style={{marginBottom: 10}}>-</Button>
+            </>
+
+            <div className='image-wrapper'>
+                {isLoading && <SkeletonImage active={true} className='skeleton-loader'/>}
+                <img
+                    src={`https://scihub.copernicus.eu/dhus/odata/v1/Products('${productId}')/Products('Quicklook')/$value`}
+                    onLoad={() => dispatch(setIsLoading(false))}
+                    style={{
+                        display: isLoading ? 'none' : 'block',
+                        filter: `brightness(${brightness})`
+                    }}
+                    alt=""
+                />
+            </div>
+
+        </div>
+    );
+});
 
 
 function App() {
 
-  const [startIndex, setStartIndex] = useState(0);
+    const dispatch = useDispatch();
 
-  const handleReplace = () => {
-    setStartIndex((prevIndex) => {
-      const nextIndex = prevIndex + 2;
-      if (nextIndex >= products.length) {
-        console.log('No more data...');
+    const [startIndex, setStartIndex] = useState(0);
 
-        getData(nextChunkUrl)
-        return nextIndex >= products.length ? 0 : nextIndex;
-      }
-      return nextIndex;  // otherwise, update to the next index
-    });
+    const [uriQuery, setUriQuery] = useState(`${baseUrl}/search?q=footprint:"${coordinates}" AND platformname:"${platform}" AND cloudcoverpercentage:${cloudcoverage}&format=json`)
 
-  };
+    const {data, isError, error} = useGetProductsQuery(uriQuery);
 
-  const [products, setProducts] = useState<Product[]>([])
-  const [nextChunkUrl, setNextChunkUrl] = useState<string>('')
+    const [nextChunkUrl, setNextChunkUrl] = useState<string>('')
 
 
-  const getData = async (uriQuery: string) => {
-    try {
-      const res = await fetch(uriQuery, {
-        method: 'GET',
-        headers: {
-          'Authorization': 'Basic ' + btoa(username + ":" + password)
-        }
-      })
-      const data =  await res.json()
-      console.log('--->>>data: ', data)
+    useEffect(() => {
+        const nextLink = data?.feed.link.find((link: { rel: string }) => link.rel === 'next')
+        setNextChunkUrl(nextLink?.href)
+    }, [data])
 
-      const nextLink = data.feed.link.find((link: {rel: string}) => link.rel === 'next')
 
-      setNextChunkUrl(nextLink.href)
-      setProducts(data.feed.entry);
-    }
-    catch (e){
-      console.log('--->>>error: ', e)
+    const handleReplace = () => {
+        dispatch(setIsLoading(true))
+        setStartIndex((prevIndex) => {
+            const nextIndex = prevIndex + 2;
+            if (nextIndex >= data?.feed.entry.length) {
+                console.log('No more data...');
+                setUriQuery(nextChunkUrl);
+                return nextIndex >= data?.feed.entry.length ? 0 : nextIndex;
+            }
+            return nextIndex;
+        });
+
+    };
+
+    const products = data?.feed.entry || [];
+
+
+    if (isError) { // @ts-ignore
+        return <div>Error: {error.message}</div>;
     }
 
-  }
+    return (
+        <div className="App">
+            <Button type='primary' onClick={handleReplace}>Replace</Button>
 
-  useEffect(()=> {
-    getData(uriQuery)
-  }, [])
-
-  console.log('--->>>startIndex : ', startIndex)
-  // console.log('--->>>nextChunk : ', nextChunk)
-
-  return (
-    <div className="App">
-      <div>
-        <button onClick={handleReplace}>Replace</button>
-        <div style={{display: 'flex'}}>
-          <div>
-            <div>ID 1: {products[startIndex]?.id}</div>
-            <img src={`https://scihub.copernicus.eu/dhus/odata/v1/Products('${products[startIndex]?.id}')/Products('Quicklook')/$value`} />
-          </div>
-          <div>
-            <div>ID 2: {products[startIndex + 1]?.id}</div>
-            <img src={`https://scihub.copernicus.eu/dhus/odata/v1/Products('${products[startIndex + 1]?.id}')/Products('Quicklook')/$value`} />
-          </div>
-
+            <div className='product-info-wrapper'>
+                <Image productId={products[startIndex]?.id}/>
+                <Image productId={products[startIndex + 1]?.id}/>
+            </div>
         </div>
-
-      </div>
-    </div>
-  );
+    );
 }
 
 export default App;
