@@ -14,7 +14,7 @@ const store = configureStore({
         uiState: uiStateSlice,
     },
     middleware: (getDefaultMiddleware) =>
-        getDefaultMiddleware().concat(api.middleware),
+        getDefaultMiddleware({serializableCheck: false}).concat(api.middleware),
 });
 
 const root = ReactDOM.createRoot(

@@ -18,7 +18,13 @@ export const api = createApi({
         getProducts: builder.query({
             query: (uriQuery) => uriQuery,
         }),
+        getImage: builder.query({
+            query: (uriQuery) => ({
+                url: uriQuery,
+                responseHandler: (response) => response.blob(),
+            }),
+        }),
     }),
 });
 
-export const {  useGetProductsQuery } = api;
+export const {  useGetProductsQuery, useGetImageQuery } = api;
