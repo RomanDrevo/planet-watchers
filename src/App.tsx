@@ -6,6 +6,10 @@ import {Button, Spin} from "antd";
 import {setIsLoading} from "./store/uiStateSlice";
 import ImageComponent from './components/ImageComponent'
 
+type Error = {
+    message: string
+}
+
 
 // Constants for query parameters
 const baseUrl = 'https://scihub.copernicus.eu/dhus';
@@ -48,8 +52,8 @@ function App() {
     const products = data?.feed.entry || [];
 
 
-    if (isError) { // @ts-ignore
-        return <div>Error: {error.message}</div>;
+    if (isError && 'status' in error) {
+        return <div>Error: {error.status}</div>;
     }
 
     return (
