@@ -6,10 +6,6 @@ import {Button, Spin} from "antd";
 import {setIsLoading} from "./store/uiStateSlice";
 import ImageComponent from './components/ImageComponent'
 
-type Error = {
-    message: string
-}
-
 
 // Constants for query parameters
 const baseUrl = 'https://scihub.copernicus.eu/dhus';
