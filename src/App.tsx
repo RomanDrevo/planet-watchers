@@ -2,7 +2,7 @@ import React, {useEffect, useState} from 'react';
 import './App.css';
 import {useDispatch} from "react-redux";
 import {useGetProductsQuery} from "./store/productsApi";
-import {Button} from "antd";
+import {Button, Spin} from "antd";
 import {setIsLoading} from "./store/uiStateSlice";
 import ImageComponent from './components/ImageComponent'
 
@@ -56,12 +56,13 @@ function App() {
         <div className="App">
             <Button type='primary' onClick={handleReplace}>Replace</Button>
             {
-                !isLoading && !isFetching && (
+                !isLoading && !isFetching ? (
                     <div className='product-info-wrapper'>
                         <ImageComponent productId={products[startIndex]?.id}/>
                         <ImageComponent productId={products[startIndex + 1]?.id}/>
                     </div>
-                )
+                ) :
+                    <Spin spinning={true} size='large' />
             }
         </div>
     );
