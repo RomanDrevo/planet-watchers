@@ -4,9 +4,10 @@ import {useDispatch} from "react-redux";
 import {useGetProductsQuery} from "./store/productsApi";
 import {Button} from "antd";
 import {setIsLoading} from "./store/uiStateSlice";
-import Image from './components/Image'
+import ImageComponent from './components/ImageComponent'
 
 
+// Constants for query parameters
 const baseUrl = 'https://scihub.copernicus.eu/dhus';
 const platform = 'Sentinel-2'
 const cloudcoverage = '[0 TO 29]'
@@ -57,8 +58,8 @@ function App() {
             {
                 !isLoading && !isFetching && (
                     <div className='product-info-wrapper'>
-                        <Image productId={products[startIndex]?.id}/>
-                        <Image productId={products[startIndex + 1]?.id}/>
+                        <ImageComponent productId={products[startIndex]?.id}/>
+                        <ImageComponent productId={products[startIndex + 1]?.id}/>
                     </div>
                 )
             }

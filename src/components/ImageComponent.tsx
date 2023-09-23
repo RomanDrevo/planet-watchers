@@ -1,8 +1,10 @@
 import React, {useState} from "react";
 import {useDispatch, useSelector} from "react-redux";
 import {Button} from "antd";
-import SkeletonImage from "antd/es/skeleton/Image";
+import {Skeleton} from 'antd'
 import {setIsLoading} from "../store/uiStateSlice";
+
+const {Image} = Skeleton
 
 
 interface RootState {
@@ -12,7 +14,7 @@ interface RootState {
     };
 }
 
-const Image = React.memo(({productId}: { productId: string }) => {
+const ImageComponent = React.memo(({productId}: { productId: string }) => {
     const dispatch = useDispatch();
     const isLoading = useSelector((state: RootState) => state.uiState.isLoading);
 
@@ -35,7 +37,7 @@ const Image = React.memo(({productId}: { productId: string }) => {
             </>
 
             <div className='image-wrapper'>
-                {isLoading && <SkeletonImage active={true} className='skeleton-loader'/>}
+                {isLoading && <Image active={true} className='skeleton-loader'/>}
                 <img
                     src={`https://scihub.copernicus.eu/dhus/odata/v1/Products('${productId}')/Products('Quicklook')/$value`}
                     onLoad={() => dispatch(setIsLoading(false))}
@@ -51,4 +53,4 @@ const Image = React.memo(({productId}: { productId: string }) => {
     );
 });
 
-export default Image
+export default ImageComponent
